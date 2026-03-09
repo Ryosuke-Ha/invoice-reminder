@@ -70,13 +70,19 @@ def main():
             continue
 
         diff = (due_date - today).days
-        if diff not in [2, 3]:
+        if diff > 3:
             continue
 
         title = get_title(page)
         amount = get_amount(page)
 
-        text = f"⚠️ 支払期限リマインド\n{title}\n期限: {due_date}\n残り: {diff}日\n金額: {amount}"
+        text = (
+            f"<@hayakawaawaw>\n⚠️ 支払期限リマインド\n"
+            f"{title}\n"
+            f"期限: {due_date}\n"
+            f"残り: {diff}日\n"
+            f"金額: {amount}"
+        )
         send_slack(text)
         update_reminded(page["id"])
 
