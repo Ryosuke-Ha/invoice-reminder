@@ -19,8 +19,7 @@ def query_notion():
     payload = {
         "filter": {
             "and": [
-                {"property": "Paid At", "date": {"is_empty": True}},
-                {"property": "Reminder Sent", "checkbox": {"equals": False}}
+                {"property": "Status", "status": {"equals": "OPEN"}},
             ]
         }
     }
@@ -70,18 +69,28 @@ def main():
             continue
 
         diff = (due_date - today).days
+
+        # 4日以上先なら通知しない
         if diff > 3:
             continue
 
         title = get_title(page)
         amount = get_amount(page)
 
+        if diff > 0:
+            timing_text = f"支払期限まで残り{diff}日"
+        elif diff == 0:
+            timing_text = "今日が支払期限です"
+        else:
+            timing_text = f"支払期限を{-diff}日過ぎています"
+
         text = (
-            f"<@hayakawaawaw>\n⚠️ 支払期限リマインド\n"
-            f"{title}\n"
+            f"<@hayakawaawaw>\n"
+            f"⚠️ 未払いリマインド\n"
+            f"タイトル: {title}\n"
             f"期限: {due_date}\n"
-            f"残り: {diff}日\n"
-            f"金額: {amount}"
+            f"{timing_text}\n"
+            f"金額: ¥{amount:,.0f}"
         )
         send_slack(text)
         update_reminded(page["id"])
