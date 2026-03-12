@@ -1,111 +1,102 @@
 # Invoice Reminder & freee Sync
 
-Notionで管理している請求・支払い情報を元に
+An automation tool that uses invoice/payment information managed in Notion to:
 
-- 未払いのリマインド通知
-- 支払い済みのfreee自動登録
+- Send reminders for unpaid invoices
+- Automatically register paid transactions in freee
 
-を行う自動化ツールです。
-
-GitHub Actionsで定期実行されます。
+The workflows run periodically using GitHub Actions.
 
 ---
 
-# 全体構成
+# Architecture
 
 ```
 Notion DB
    ↓
 GitHub Actions
    ↓
-Python Script
+Python Scripts
 
 ① reminder.py
-未払いリマインド通知
+Send reminders for unpaid invoices
 
 ② sync_freee.py
-支払い済みデータを freee に登録
+Register paid transactions to freee
 ```
 
 ---
 
-# 機能
+# Features
 
-## 未払いリマインド
+## Unpaid Invoice Reminder
 
-Notion DB を確認し
+The system checks the Notion database and sends a Slack notification when:
 
 ```
 Status = OPEN
-Reminder Sent = false
 Due Date ≤ today + 3
 ```
 
-の条件のものを Slack に通知します。
-
-通知後
+After sending the notification, the following field is updated:
 
 ```
 Reminder Sent = true
 ```
 
-に更新します。
-
 ---
 
-## freee連携
+## freee Integration
 
-Notion DB を確認し
+The system checks the Notion database and registers records to the freee API when:
 
 ```
 Status = PAID
 freee Deal ID = empty
 ```
 
-のものを freee API に登録します。
-
-登録成功後
+After successful registration:
 
 ```
 freee Deal ID
 freee Sync Status = done
 ```
 
-を Notion に更新します。
+are updated in Notion.
 
 ---
 
 # Notion Database
 
-最低限必要なカラム
+Minimum required properties:
 
-| Property | Type | 用途 |
+| Property | Type | Purpose |
 |--------|------|------|
-| Title | Title | 請求名 |
-| Amount | Number | 金額 |
-| Due Date | Date | 支払期限 |
-| Paid At | Date | 支払日 |
+| Title | Title | Invoice title |
+| Amount | Number | Amount |
+| Due Date | Date | Payment due date |
+| Paid At | Date | Payment date |
 | Status | Status | OPEN / PAID |
-| Reminder Sent | Checkbox | 通知済みフラグ |
-| freee Deal ID | Text | freee登録ID |
-| freee Sync Status | Status | sync結果 |
+| Reminder Sent | Checkbox | Reminder flag |
+| freee Deal ID | Text | freee transaction ID |
+| freee Sync Status | Status | Sync result |
 
 ---
 
-# 使用技術
+# Technologies
 
-| 技術 | 用途 |
+| Technology | Purpose |
 |----|----|
-| Python | スクリプト |
-| Notion API | DB取得 / 更新 |
-| freee API | 会計登録 |
-| Slack Webhook | 通知 |
-| GitHub Actions | 定期実行 |
-| PyNaCl | GitHub Secret更新 |
+| Python | Automation scripts |
+| Notion API | Fetch and update database records |
+| freee API | Register accounting transactions |
+| Slack Webhook | Notifications |
+| GitHub Actions | Scheduled execution |
+| PyNaCl | GitHub secret encryption |
 
 ---
 
-# ディレクトリ構成
+# Directory Structure
 
 ```
 invoice-reminder
@@ -123,9 +114,9 @@ invoice-reminder
 
 ---
 
-# セットアップ
+# Setup
 
-## 1. clone
+## 1. Clone repository
 
 ```bash
 git clone https://github.com/<user>/invoice-reminder.git
@@ -134,7 +125,7 @@ cd invoice-reminder
 
 ---
 
-## 2. Python環境
+## 2. Install Python dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -142,13 +133,13 @@ pip install -r requirements.txt
 
 ---
 
-## 3. .env 作成
+## 3. Create `.env`
 
 ```bash
 touch .env
 ```
 
-.env に以下を設定
+Add the following configuration:
 
 ```env
 NOTION_TOKEN=
@@ -173,23 +164,25 @@ SLACK_WEBHOOK_URL=
 
 ---
 
-# freee 初期設定
+# freee Initial Setup
 
-初回のみ実行
+Run this **only once** during the initial setup:
 
 ```bash
 python get_freee_token.py
 ```
 
-実行して `refresh_token` を取得し `.env` または GitHub Secrets に保存します。
+This script retrieves a `refresh_token`.
 
-※通常運用ではこのスクリプトは使用しません。
+Store the token in `.env` or GitHub Secrets.
+
+This script is **not required during normal operation**.
 
 ---
 
 # GitHub Secrets
 
-GitHub
+In GitHub:
 
 ```
 Settings
@@ -199,7 +192,7 @@ Secrets and variables
 Actions
 ```
 
-に以下を登録
+Register the following secrets:
 
 ```
 NOTION_TOKEN
@@ -228,51 +221,51 @@ SLACK_WEBHOOK_URL
 
 ## reminder.yml
 
-未払い通知
+Handles unpaid invoice reminders.
 
 ```
-毎日実行
+Runs daily
 ```
 
 ---
 
 ## sync_freee.yml
 
-freee連携
+Handles freee synchronization.
 
 ```
-毎時実行
+Runs hourly
 ```
 
-処理フロー
+Processing flow:
 
 ```
-Notion確認
+Check Notion
 ↓
-対象なし → 終了
+No target → exit
 ↓
-対象あり → freee token refresh
+Target exists → refresh freee token
 ↓
-freee登録
+Register transaction in freee
 ↓
-Notion更新
+Update Notion
 ↓
-refresh token 更新
+Update refresh token
 ↓
-GitHub Secret 更新
+Update GitHub Secret
 ```
 
 ---
 
-# ローカル実行
+# Local Execution
 
-## reminder
+## Run reminder
 
 ```bash
 python reminder.py
 ```
 
-## freee sync
+## Run freee sync
 
 ```bash
 python sync_freee.py
@@ -280,7 +273,7 @@ python sync_freee.py
 
 ---
 
-# トラブルシューティング
+# Troubleshooting
 
 ## freee token error
 
@@ -288,12 +281,12 @@ python sync_freee.py
 invalid_grant
 ```
 
-原因
+Possible causes:
 
-- refresh_token失効
+- expired refresh token
 - redirect URI mismatch
 
-対処
+Solution:
 
 ```bash
 python get_freee_token.py
@@ -301,23 +294,13 @@ python get_freee_token.py
 
 ---
 
-## GitHub Secret更新エラー
+## GitHub Secret update error
 
 ```
 401 Bad credentials
 ```
 
-確認
+Check:
 
-- GH_SECRET_PAT
-- Secrets write permission
-
----
-
-# 今後の改善案
-
-- Slack通知のBlockKit化
-- freee登録失敗の再試行
-- logging導入
-- エラーレポート
-- Notion webhook対応
+- `GH_SECRET_PAT`
+- repository Secrets write permission
