@@ -1,0 +1,44 @@
+name: sync-freee
+
+on:
+  schedule:
+    # 毎時0分に実行（UTC）
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run freee sync
+        run: python sync_freee.py
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+
+          FREEE_CLIENT_ID: ${{ secrets.FREEE_CLIENT_ID }}
+          FREEE_CLIENT_SECRET: ${{ secrets.FREEE_CLIENT_SECRET }}
+          FREEE_REFRESH_TOKEN: ${{ secrets.FREEE_REFRESH_TOKEN }}
+
+          FREEE_COMPANY_ID: ${{ secrets.FREEE_COMPANY_ID }}
+          FREEE_WALLETABLE_ID: ${{ secrets.FREEE_WALLETABLE_ID }}
+          FREEE_WALLETABLE_TYPE: ${{ secrets.FREEE_WALLETABLE_TYPE }}
+          FREEE_ACCOUNT_ITEM_ID: ${{ secrets.FREEE_ACCOUNT_ITEM_ID }}
+          FREEE_TAX_CODE: ${{ secrets.FREEE_TAX_CODE }}
+
+          GH_REPO_OWNER: ${{ secrets.GH_REPO_OWNER }}
+          GH_REPO_NAME: ${{ secrets.GH_REPO_NAME }}
+          GH_SECRET_PAT: ${{ secrets.GH_SECRET_PAT }}
