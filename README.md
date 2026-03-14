@@ -234,7 +234,7 @@ Runs daily
 Handles freee synchronization.
 
 ```
-Runs hourly
+Runs daily
 ```
 
 Processing flow:
