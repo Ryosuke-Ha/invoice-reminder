@@ -49,7 +49,7 @@ def query_notion():
     }
     res = requests.post(url, headers=notion_headers(), json=payload, timeout=30)
     print("notion query status:", res.status_code)
-    print("notion query body:", res.text[:1000])
+    print("notion query body:", res.text[:2000])
     res.raise_for_status()
     return res.json()["results"]
 
@@ -66,14 +66,65 @@ def get_paid_at(page):
         return None
     return datetime.fromisoformat(value["start"]).date().isoformat()
 
+
+def extract_number_from_property(prop, prop_name=""):
+    prop_type = prop.get("type")
+
+    # Number property
+    if prop_type == "number":
+        return int(prop.get("number") or 0)
+
+    # Rollup property
+    if prop_type == "rollup":
+        rollup = prop.get("rollup", {})
+        rollup_type = rollup.get("type")
+
+        # rollup number
+        if rollup_type == "number":
+            return int(rollup.get("number") or 0)
+
+        # rollup array
+        if rollup_type == "array":
+            arr = rollup.get("array", [])
+            if not arr:
+                return 0
+
+            first = arr[0]
+            first_type = first.get("type")
+
+            if first_type == "number":
+                return int(first.get("number") or 0)
+
+            if first_type == "rich_text":
+                texts = first.get("rich_text", [])
+                text_value = "".join([t.get("plain_text", "") for t in texts]).strip()
+                return int(text_value) if text_value else 0
+
+            if first_type == "title":
+                titles = first.get("title", [])
+                text_value = "".join([t.get("plain_text", "") for t in titles]).strip()
+                return int(text_value) if text_value else 0
+
+            raise TypeError(
+                f"Unsupported rollup array item type for {prop_name}: {first_type}"
+            )
+
+        raise TypeError(f"Unsupported rollup type for {prop_name}: {rollup_type}")
+
+    raise TypeError(f"Unsupported property type for {prop_name}: {prop_type}")
+
+
 def get_freee_company_id(page):
-    return int(page["properties"]["freee Company ID"]["number"] or 0)
+    prop = page["properties"]["freee Company ID"]
+    return extract_number_from_property(prop, "freee Company ID")
 
 def get_freee_account_item_id(page):
-    return int(page["properties"]["freee Account Item ID"]["number"] or 0)
+    prop = page["properties"]["freee Account Item ID"]
+    return extract_number_from_property(prop, "freee Account Item ID")
 
 def get_freee_tax_code(page):
-    return int(page["properties"]["freee Tax Code"]["number"] or 0)
+    prop = page["properties"]["freee Tax Code"]
+    return extract_number_from_property(prop, "freee Tax Code")
 
 def update_success(page_id, deal_id):
     url = f"https://api.notion.com/v1/pages/{page_id}"
@@ -250,9 +301,14 @@ def main():
         amount = get_amount(page)
         paid_at = get_paid_at(page)
 
-        company_id = get_freee_company_id(page)
-        account_item_id = get_freee_account_item_id(page)
-        tax_code = get_freee_tax_code(page)
+        try:
+            company_id = get_freee_company_id(page)
+            account_item_id = get_freee_account_item_id(page)
+            tax_code = get_freee_tax_code(page)
+        except Exception as e:
+            print("property parse error:", str(e))
+            update_error(page["id"], f"Property parse error: {str(e)}")
+            continue
 
         if not paid_at or amount <= 0:
             print("skip invalid row:", title, paid_at, amount)
