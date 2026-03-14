@@ -33,11 +33,8 @@ jobs:
           FREEE_CLIENT_SECRET: ${{ secrets.FREEE_CLIENT_SECRET }}
           FREEE_REFRESH_TOKEN: ${{ secrets.FREEE_REFRESH_TOKEN }}
 
-          FREEE_COMPANY_ID: ${{ secrets.FREEE_COMPANY_ID }}
           FREEE_WALLETABLE_ID: ${{ secrets.FREEE_WALLETABLE_ID }}
           FREEE_WALLETABLE_TYPE: ${{ secrets.FREEE_WALLETABLE_TYPE }}
-          FREEE_ACCOUNT_ITEM_ID: ${{ secrets.FREEE_ACCOUNT_ITEM_ID }}
-          FREEE_TAX_CODE: ${{ secrets.FREEE_TAX_CODE }}
 
           GH_REPO_OWNER: ${{ secrets.GH_REPO_OWNER }}
           GH_REPO_NAME: ${{ secrets.GH_REPO_NAME }}

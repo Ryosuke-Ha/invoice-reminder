@@ -18,11 +18,8 @@ FREEE_CLIENT_ID = os.environ["FREEE_CLIENT_ID"]
 FREEE_CLIENT_SECRET = os.environ["FREEE_CLIENT_SECRET"]
 FREEE_REFRESH_TOKEN = os.environ["FREEE_REFRESH_TOKEN"]
 
-FREEE_COMPANY_ID = int(os.environ["FREEE_COMPANY_ID"])
 FREEE_WALLETABLE_ID = int(os.environ["FREEE_WALLETABLE_ID"])
 FREEE_WALLETABLE_TYPE = os.environ["FREEE_WALLETABLE_TYPE"]
-FREEE_ACCOUNT_ITEM_ID = int(os.environ["FREEE_ACCOUNT_ITEM_ID"])
-FREEE_TAX_CODE = int(os.environ["FREEE_TAX_CODE"])
 
 GH_REPO_OWNER = os.environ["GH_REPO_OWNER"]
 GH_REPO_NAME = os.environ["GH_REPO_NAME"]
@@ -68,6 +65,15 @@ def get_paid_at(page):
     if not value:
         return None
     return datetime.fromisoformat(value["start"]).date().isoformat()
+
+def get_freee_company_id(page):
+    return int(page["properties"]["freee Company ID"]["number"] or 0)
+
+def get_freee_account_item_id(page):
+    return int(page["properties"]["freee Account Item ID"]["number"] or 0)
+
+def get_freee_tax_code(page):
+    return int(page["properties"]["freee Tax Code"]["number"] or 0)
 
 def update_success(page_id, deal_id):
     url = f"https://api.notion.com/v1/pages/{page_id}"
@@ -180,20 +186,20 @@ def update_github_secret(secret_name, secret_value):
 # ----------------------------
 # freee deal
 # ----------------------------
-def create_freee_deal(access_token, title, amount, paid_at):
+def create_freee_deal(access_token, title, amount, paid_at, company_id, account_item_id, tax_code):
     url = "https://api.freee.co.jp/api/1/deals"
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
     }
     payload = {
-        "company_id": FREEE_COMPANY_ID,
+        "company_id": company_id,
         "issue_date": paid_at,
         "type": "expense",
         "details": [
             {
-                "account_item_id": FREEE_ACCOUNT_ITEM_ID,
-                "tax_code": FREEE_TAX_CODE,
+                "account_item_id": account_item_id,
+                "tax_code": tax_code,
                 "amount": amount,
                 "description": title,
             }
@@ -244,12 +250,30 @@ def main():
         amount = get_amount(page)
         paid_at = get_paid_at(page)
 
+        company_id = get_freee_company_id(page)
+        account_item_id = get_freee_account_item_id(page)
+        tax_code = get_freee_tax_code(page)
+
         if not paid_at or amount <= 0:
             print("skip invalid row:", title, paid_at, amount)
             continue
 
+        if company_id <= 0 or account_item_id <= 0:
+            print("skip invalid freee master:", title, company_id, account_item_id, tax_code)
+            update_error(page["id"], "Missing freee Company ID or freee Account Item ID")
+            continue
+
         try:
-            result = create_freee_deal(access_token, title, amount, paid_at)
+            result = create_freee_deal(
+                access_token=access_token,
+                title=title,
+                amount=amount,
+                paid_at=paid_at,
+                company_id=company_id,
+                account_item_id=account_item_id,
+                tax_code=tax_code,
+            )
+
             deal_id = result.get("deal", {}).get("id") or result.get("id")
             if not deal_id:
                 raise Exception(f"deal_id not found: {result}")
