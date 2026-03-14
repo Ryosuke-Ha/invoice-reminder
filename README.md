@@ -80,6 +80,9 @@ Minimum required properties:
 | Reminder Sent | Checkbox | Reminder flag |
 | freee Deal ID | Text | freee transaction ID |
 | freee Sync Status | Status | Sync result |
+| freee Company ID | Number | ID |
+| freee Acccount Item ID | Number | ID |
+| freee Tax Code | Number | Code |
 
 ---
 
@@ -149,11 +152,8 @@ FREEE_CLIENT_ID=
 FREEE_CLIENT_SECRET=
 FREEE_REFRESH_TOKEN=
 
-FREEE_COMPANY_ID=
 FREEE_WALLETABLE_ID=
 FREEE_WALLETABLE_TYPE=
-FREEE_ACCOUNT_ITEM_ID=
-FREEE_TAX_CODE=
 
 GH_REPO_OWNER=
 GH_REPO_NAME=
@@ -202,11 +202,8 @@ FREEE_CLIENT_ID
 FREEE_CLIENT_SECRET
 FREEE_REFRESH_TOKEN
 
-FREEE_COMPANY_ID
 FREEE_WALLETABLE_ID
 FREEE_WALLETABLE_TYPE
-FREEE_ACCOUNT_ITEM_ID
-FREEE_TAX_CODE
 
 GH_REPO_OWNER
 GH_REPO_NAME
